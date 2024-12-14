@@ -1,0 +1,82 @@
+import requests
+import random
+import time
+import json
+import os
+
+# Function to generate random user agent
+def generate_user_agent():
+    android_versions = ['8.1.0', '9', '10', '11', '12']
+    devices = ['Pixel', 'Samsung', 'Huawei', 'Xiaomi', 'OnePlus']
+    version = random.choice(android_versions)
+    device = random.choice(devices)
+    return f"Mozilla/5.0 (Linux; Android {version}; {device}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Mobile Safari/537.36"
+
+# Function to fetch ad data
+def fetch_ad_data(tg_id):
+    url = f"https://api.adsgram.ai/adv?blockId=4853&tg_id={tg_id}&tg_platform=android&platform=Linux%20aarch64"
+    
+    headers = {
+        "User-Agent": generate_user_agent(),
+        "Accept": "application/json",
+        "X-Requested-With": "org.telegram.messenger",
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            return response.json()  # Return JSON response if successful
+        elif response.status_code == 403:
+            print("IP Banned. Use a different IP.")
+        else:
+            print(f"HTTP Error: {response.status_code}")
+    except requests.RequestException as e:
+        print(f"Request Error: {e}")
+
+    return None
+
+# Function to claim rewards
+def claim_reward(reward_url, headers):
+    try:
+        response = requests.get(reward_url, headers=headers)
+        if response.status_code == 200:
+            print("Reward claimed successfully!")
+        else:
+            print(f"Failed to claim reward: HTTP {response.status_code}")
+    except requests.RequestException as e:
+        print(f"Reward Claim Error: {e}")
+
+# Main logic
+def main():
+    # Load Telegram user IDs
+    tg_ids = ["123456789", "987654321"]  # Replace with your actual TG IDs
+
+    for tg_id in tg_ids:
+        print(f"Fetching ads for Telegram ID: {tg_id}")
+        ad_data = fetch_ad_data(tg_id)
+        
+        if not ad_data:
+            print("Failed to fetch ads. Skipping...")
+            continue
+
+        # Extract reward URLs
+        if 'banner' in ad_data and 'trackings' in ad_data['banner']:
+            for tracking in ad_data['banner']['trackings']:
+                if tracking['name'] == 'reward':
+                    reward_url = tracking['value']
+                    print(f"Reward URL: {reward_url}")
+                    
+                    # Claim the reward
+                    headers = {
+                        "User-Agent": generate_user_agent(),
+                        "Accept": "application/json",
+                    }
+                    claim_reward(reward_url, headers)
+
+        # Cooldown to mimic real user behavior
+        cooldown = random.randint(10, 30)
+        print(f"Cooldown: {cooldown} seconds...")
+        time.sleep(cooldown)
+
+if name == "main":
+    main()
